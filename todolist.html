@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List App</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --card: #fffaf3;
+      --primary: #c66b3d;
+      --primary-dark: #964c27;
+      --text: #2c241e;
+      --muted: #6f6258;
+      --border: #e7d6c7;
+      --success: #3f7d58;
+      --danger: #c44536;
+      --shadow: 0 18px 40px rgba(75, 52, 36, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(198, 107, 61, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(63, 125, 88, 0.14), transparent 24%),
+        var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(100%, 760px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 28px 28px 12px;
+      background: linear-gradient(135deg, #fff7ee 0%, #f7efe5 100%);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .content {
+      padding: 24px 28px 28px;
+    }
+
+    .task-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .task-form input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      background: #fff;
+    }
+
+    .task-form input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(198, 107, 61, 0.14);
+    }
+
+    .task-form button,
+    .task-actions button,
+    .toolbar button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+    }
+
+    .task-form button:hover,
+    .task-actions button:hover,
+    .toolbar button:hover {
+      transform: translateY(-1px);
+    }
+
+    .task-form button {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .stats {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toolbar button {
+      background: #f1e5d8;
+      color: var(--text);
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-check {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--success);
+      cursor: pointer;
+    }
+
+    .task-text {
+      font-size: 1rem;
+      word-break: break-word;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .edit-btn {
+      background: #e9f1fb;
+      color: #2d5e9c;
+    }
+
+    .delete-btn {
+      background: #fde9e6;
+      color: var(--danger);
+    }
+
+    .empty {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: #fffdfa;
+    }
+
+    @media (max-width: 640px) {
+      .task-form {
+        grid-template-columns: 1fr;
+      }
+
+      .task-item {
+        grid-template-columns: auto 1fr;
+      }
+
+      .task-actions {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>To-Do List</h1>
+      <p>Create, update, complete, and delete tasks with long-term Firebase storage.</p>
+    </section>
+
+    <section class="content">
+      <form class="task-form" id="taskForm">
+        <input
+          type="text"
+          id="taskInput"
+          placeholder="Enter a task..."
+          autocomplete="off"
+          required
+        >
+        <button type="submit" id="submitButton">Add Task</button>
+      </form>
+
+      <div class="toolbar">
+        <div class="stats" id="taskStats">0 tasks</div>
+        <button type="button" id="clearCompleted">Clear Completed</button>
+      </div>
+
+      <div class="list" id="taskList"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+    import {
+      addDoc,
+      collection,
+      deleteDoc,
+      doc,
+      getFirestore,
+      onSnapshot,
+      orderBy,
+      query,
+      serverTimestamp,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBsnMSFYM87XQM8WLTlwo-71_2bMfH9tnk",
+      authDomain: "to-do-24611.firebaseapp.com",
+      projectId: "to-do-24611",
+      storageBucket: "to-do-24611.firebasestorage.app",
+      messagingSenderId: "409090582801",
+      appId: "1:409090582801:web:28807d3cdab51cdb2804b0",
+      measurementId: "G-GTPZR9FKHX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+
+    const db = getFirestore(app);
+    const tasksRef = collection(db, "tasks");
+
+    const taskForm = document.getElementById("taskForm");
+    const taskInput = document.getElementById("taskInput");
+    const submitButton = document.getElementById("submitButton");
+    const taskList = document.getElementById("taskList");
+    const taskStats = document.getElementById("taskStats");
+    const clearCompletedButton = document.getElementById("clearCompleted");
+
+    let tasks = [];
+    let editTaskId = null;
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+
+      if (tasks.length === 0) {
+        taskList.innerHTML = '<div class="empty">No tasks yet. Add one to get started.</div>';
+        updateStats();
+        return;
+      }
+
+      tasks.forEach((task) => {
+        const item = document.createElement("article");
+        item.className = `task-item ${task.completed ? "completed" : ""}`;
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "task-check";
+        checkbox.checked = task.completed;
+        checkbox.addEventListener("change", () => toggleTask(task.id, task.completed));
+
+        const text = document.createElement("div");
+        text.className = "task-text";
+        text.textContent = task.text;
+
+        const actions = document.createElement("div");
+        actions.className = "task-actions";
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "edit-btn";
+        editButton.textContent = "Edit";
+        editButton.addEventListener("click", () => startEdit(task.id));
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-btn";
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener("click", () => deleteTask(task.id));
+
+        actions.append(editButton, deleteButton);
+        item.append(checkbox, text, actions);
+        taskList.appendChild(item);
+      });
+
+      updateStats();
+    }
+
+    function updateStats() {
+      const completedCount = tasks.filter((task) => task.completed).length;
+      const pendingCount = tasks.length - completedCount;
+      taskStats.textContent = `${tasks.length} task${tasks.length !== 1 ? "s" : ""} | ${pendingCount} pending | ${completedCount} completed`;
+    }
+
+    function resetForm() {
+      taskForm.reset();
+      editTaskId = null;
+      submitButton.textContent = "Add Task";
+      taskInput.focus();
+    }
+
+    function startEdit(taskId) {
+      const task = tasks.find((entry) => entry.id === taskId);
+      if (!task) return;
+
+      editTaskId = taskId;
+      taskInput.value = task.text;
+      submitButton.textContent = "Update Task";
+      taskInput.focus();
+    }
+
+    async function addTask(text) {
+      await addDoc(tasksRef, {
+        text,
+        completed: false,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    async function updateTask(taskId, text) {
+      await updateDoc(doc(db, "tasks", taskId), {
+        text
+      });
+    }
+
+    async function toggleTask(taskId, completed) {
+      await updateDoc(doc(db, "tasks", taskId), {
+        completed: !completed
+      });
+    }
+
+    async function deleteTask(taskId) {
+      await deleteDoc(doc(db, "tasks", taskId));
+
+      if (editTaskId === taskId) {
+        resetForm();
+      }
+    }
+
+    async function clearCompletedTasks() {
+      const completedTasks = tasks.filter((task) => task.completed);
+      await Promise.all(
+        completedTasks.map((task) => deleteDoc(doc(db, "tasks", task.id)))
+      );
+    }
+
+    taskForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = taskInput.value.trim();
+
+      if (!text) {
+        taskInput.focus();
+        return;
+      }
+
+      submitButton.disabled = true;
+
+      try {
+        if (editTaskId !== null) {
+          await updateTask(editTaskId, text);
+        } else {
+          await addTask(text);
+        }
+
+        resetForm();
+      } catch (error) {
+        console.error("Failed to save task:", error);
+        alert("Could not save the task. Check Firebase setup and permissions.");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    clearCompletedButton.addEventListener("click", async () => {
+      try {
+        await clearCompletedTasks();
+      } catch (error) {
+        console.error("Failed to clear completed tasks:", error);
+        alert("Could not clear completed tasks.");
+      }
+    });
+
+    onSnapshot(query(tasksRef, orderBy("createdAt", "desc")), (snapshot) => {
+      tasks = snapshot.docs.map((taskDoc) => ({
+        id: taskDoc.id,
+        ...taskDoc.data()
+      }));
+      renderTasks();
+    }, (error) => {
+      console.error("Failed to load tasks:", error);
+      taskList.innerHTML = '<div class="empty">Unable to load tasks from Firebase. Check Firestore rules.</div>';
+    });
+  </script>
+</body>
+</html>
